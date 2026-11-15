@@ -1,0 +1,1 @@
+PRIMARY KEY (room_id, facility_id)

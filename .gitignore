@@ -1,0 +1,21 @@
+
+# Environment
+.env
+.env.*
+
+# Allow environment template
+!.env.example
+
+# Go build
+/bin/
+/dist/
+*.exe
+*.out
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
