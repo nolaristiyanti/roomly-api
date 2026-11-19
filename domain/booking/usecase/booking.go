@@ -64,8 +64,14 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 	return result, nil
 }
 
-func (u *BookingUsecase) GetBookingByID(ctx context.Context, id int64) (*entity.Booking, error) {
-	booking, err := u.bookingRepository.FindByID(ctx, id)
+func (u *BookingUsecase) GetBookingByID(ctx context.Context, id int64, userID int64, role string) (*entity.Booking, error) {
+	var filterUserID *int64
+
+	if role != "admin" {
+		filterUserID = &userID
+	}
+
+	booking, err := u.bookingRepository.FindByID(ctx, id, filterUserID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, apperrors.New(
@@ -82,8 +88,14 @@ func (u *BookingUsecase) GetBookingByID(ctx context.Context, id int64) (*entity.
 	return booking, nil
 }
 
-func (u *BookingUsecase) GetBookingList(ctx context.Context) ([]entity.Booking, error) {
-	return u.bookingRepository.FindList(ctx)
+func (u *BookingUsecase) GetBookingList(ctx context.Context, userID int64, role string) ([]entity.Booking, error) {
+	var filterUserID *int64
+
+	if role != "admin" {
+		filterUserID = &userID
+	}
+
+	return u.bookingRepository.FindList(ctx, filterUserID)
 }
 
 func validateBookingTime(startTime, endTime time.Time) error {

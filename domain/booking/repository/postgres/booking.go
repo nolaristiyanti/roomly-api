@@ -23,10 +23,33 @@ func NewBookingRepository(db *gorm.DB) repository.BookingRepository {
 }
 
 // FindByID mengambil booking berdasarkan ID
-func (r *BookingRepositoryStruct) FindByID(ctx context.Context, id int64) (*bookingentity.Booking, error) {
+func (r *BookingRepositoryStruct) FindByID(ctx context.Context, id int64, userID *int64) (*bookingentity.Booking, error) {
 	var bookingModel bookingmodel.Booking
 
-	err := r.db.WithContext(ctx).First(&bookingModel, id).Error
+	// Filter by ID booking
+	query := r.db.WithContext(ctx).Where("id = ?", id)
+
+	if userID != nil {
+		// query ditambahkan filter pemilik booking
+		query = query.Where("user_id = ?", *userID)
+	}
+
+	// err := r.db.WithContext(ctx).First(&bookingModel, id).Error
+	err := query.First(&bookingModel).Error
+
+	// --- User
+	// SELECT *
+	// FROM bookings
+	// WHERE id = 10
+	// AND user_id = 4
+	// LIMIT 1;
+
+	// --- Admin
+	// SELECT *
+	// FROM bookings
+	// WHERE id = 10
+	// LIMIT 1;
+
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +58,32 @@ func (r *BookingRepositoryStruct) FindByID(ctx context.Context, id int64) (*book
 }
 
 // FindList mengambil seluruh booking
-func (r *BookingRepositoryStruct) FindList(ctx context.Context) ([]bookingentity.Booking, error) {
+func (r *BookingRepositoryStruct) FindList(ctx context.Context, userID *int64) ([]bookingentity.Booking, error) {
 	var bookingModels []bookingmodel.Booking
 
-	err := r.db.WithContext(ctx).Order("start_time ASC").Find(&bookingModels).Error
+	query := r.db.WithContext(ctx)
 
+	if userID != nil {
+		// query ditambahkan filter pemilik booking
+		query = query.Where("user_id = ?", *userID)
+	}
+
+	// err := r.db.WithContext(ctx).Order("start_time ASC").Find(&bookingModels).Error
+	err := query.Order("start_time ASC").Find(&bookingModels).Error
 	if err != nil {
 		return nil, err
 	}
+
+	// --- User
+	// SELECT *
+	// FROM bookings
+	// WHERE user_id = 4
+	// ORDER BY start_time ASC;
+
+	// --- Admin
+	// SELECT *
+	// FROM bookings
+	// ORDER BY start_time ASC;
 
 	bookingEntities := make([]bookingentity.Booking, 0, len(bookingModels))
 

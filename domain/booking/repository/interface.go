@@ -15,7 +15,7 @@ var (
 )
 
 type BookingRepository interface {
-	FindByID(ctx context.Context, id int64) (*entity.Booking, error)
-	FindList(ctx context.Context) ([]entity.Booking, error)
+	FindByID(ctx context.Context, id int64, userID *int64) (*entity.Booking, error)
+	FindList(ctx context.Context, userID *int64) ([]entity.Booking, error)
 	Create(ctx context.Context, booking entity.Booking) (*entity.Booking, error)
 }

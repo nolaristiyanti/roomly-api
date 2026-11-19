@@ -4,12 +4,16 @@ import (
 	"log"
 	"roomly-api/common/logger"
 	"roomly-api/config"
+	authdomain "roomly-api/domain/auth"
+	authredis "roomly-api/domain/auth/repository/redis"
+	authservice "roomly-api/domain/auth/service"
 	bookingdomain "roomly-api/domain/booking"
 	facilitydomain "roomly-api/domain/facility"
 	roomdomain "roomly-api/domain/room"
 	userdomain "roomly-api/domain/user"
 	"roomly-api/middleware"
 	"roomly-api/routes"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -52,6 +56,10 @@ func main() {
 	facilityModule := facilitydomain.New(db)
 	bookingModule := bookingdomain.New(db)
 
+	jwtService := authservice.NewJWTService(cfg.JWTSecret, time.Duration(cfg.JWTExpireHours)*time.Hour)
+	sessionRepository := authredis.NewSessionRepository(redisClient)
+	authModule := authdomain.New(db, jwtService, sessionRepository)
+
 	// Create Gin router
 	router := gin.New()
 
@@ -60,8 +68,8 @@ func main() {
 	router.Use(middleware.Logging())   // mencatat informasi request setelah proses selesai
 	router.Use(gin.Recovery())         // menangani panic agar server tidak berhenti akibat panic pada satu request
 
-	// Meneruskan Modules ke Routes dan register routes
-	routes.RegisterRoutes(router, userModule, roomModule, facilityModule, bookingModule)
+	// Meneruskan Modules ke Routes dan register routes dan pasang auth middleware ke routes
+	routes.RegisterRoutes(router, userModule, roomModule, facilityModule, bookingModule, authModule, sessionRepository, jwtService, redisClient)
 
 	// Menjalankan HTTP server
 	err = router.Run(":" + cfg.AppPort)

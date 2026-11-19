@@ -3,7 +3,7 @@ package dto
 import "time"
 
 type CreateBookingRequest struct {
-	UserID    int64     `json:"user_id" binding:"required,gt=0"`
+	// UserID    int64     `json:"user_id" binding:"required,gt=0"`		// ambil user_id dari JWT
 	RoomID    int64     `json:"room_id" binding:"required,gt=0"`
 	StartTime time.Time `json:"start_time" binding:"required"`
 	EndTime   time.Time `json:"end_time" binding:"required"`

@@ -38,9 +38,12 @@ func (h *BookingHandlerStruct) CreateBooking(ctx *gin.Context) {
 		return
 	}
 
+	userID := ctx.GetInt64("user_id")
+
 	// 2. Mapping DTO ke Entity
 	booking := entity.Booking{
-		UserID:    request.UserID,
+		// UserID:    request.UserID,
+		UserID:    userID, // Ambil dari Gin Context
 		RoomID:    request.RoomID,
 		StartTime: request.StartTime,
 		EndTime:   request.EndTime,
@@ -86,7 +89,10 @@ func (h *BookingHandlerStruct) GetBookingByID(ctx *gin.Context) {
 		return
 	}
 
-	booking, err := h.bookingUsecase.GetBookingByID(ctx.Request.Context(), id)
+	userID := ctx.GetInt64("user_id")
+	role := ctx.GetString("role")
+
+	booking, err := h.bookingUsecase.GetBookingByID(ctx.Request.Context(), id, userID, role)
 	if err != nil {
 		commonhandler.HandleError(ctx, err)
 		return
@@ -111,7 +117,10 @@ func (h *BookingHandlerStruct) GetBookingByID(ctx *gin.Context) {
 
 // GetBookingList mengambil seluruh daftar booking
 func (h *BookingHandlerStruct) GetBookingList(ctx *gin.Context) {
-	bookings, err := h.bookingUsecase.GetBookingList(ctx.Request.Context())
+	userID := ctx.GetInt64("user_id")
+	role := ctx.GetString("role")
+
+	bookings, err := h.bookingUsecase.GetBookingList(ctx.Request.Context(), userID, role)
 	if err != nil {
 		commonhandler.HandleError(ctx, err)
 		return

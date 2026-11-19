@@ -16,4 +16,6 @@ type UserRepository interface {
 	// Usecase tidak perlu mengetahui keberadaan GORM maupun struktur tabel database.
 	FindByID(ctx context.Context, id int64) (*entity.User, error)
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
+	Create(ctx context.Context, user entity.User) (*entity.User, error)
+	FindList(ctx context.Context, page int, limit int, search string) ([]entity.User, int64, error)
 }

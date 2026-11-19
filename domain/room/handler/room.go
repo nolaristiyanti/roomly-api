@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	commonhandler "roomly-api/common/handler"
+	facilitydto "roomly-api/domain/facility/dto"
+	facilityentity "roomly-api/domain/facility/entity"
 	"roomly-api/domain/room/dto"
 	"roomly-api/domain/room/usecase"
 )
@@ -51,6 +53,7 @@ func (h *RoomHandlerStruct) GetRoomByID(ctx *gin.Context) {
 		Capacity:    room.Capacity,
 		Location:    room.Location,
 		IsActive:    room.IsActive,
+		Facilities:  mapFacilitiesToResponse(room.Facilities),
 	}
 
 	// 4. Kirim response
@@ -82,6 +85,7 @@ func (h *RoomHandlerStruct) GetRoomList(ctx *gin.Context) {
 			Capacity:    room.Capacity,
 			Location:    room.Location,
 			IsActive:    room.IsActive,
+			Facilities:  mapFacilitiesToResponse(room.Facilities),
 		}
 
 		responses = append(responses, response)
@@ -94,4 +98,19 @@ func (h *RoomHandlerStruct) GetRoomList(ctx *gin.Context) {
 		"Rooms retrieved successfully",
 		responses,
 	)
+}
+
+func mapFacilitiesToResponse(facilities []facilityentity.Facility) []facilitydto.FacilityResponse {
+
+	responses := make([]facilitydto.FacilityResponse, 0, len(facilities))
+
+	for _, facility := range facilities {
+		responses = append(responses, facilitydto.FacilityResponse{
+			ID:          facility.ID,
+			Name:        facility.Name,
+			Description: facility.Description,
+		})
+	}
+
+	return responses
 }
