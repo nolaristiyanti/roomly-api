@@ -53,6 +53,10 @@ func RegisterRoutes(router *gin.Engine, userModule *user.Module, roomModule *roo
 		{
 			admin.POST("/users", userModule.Handler.CreateUser)
 			admin.GET("/users", userModule.Handler.GetUserList)
+
+			admin.POST("/rooms", roomModule.Handler.CreateRoom)
+			admin.PUT("/rooms/:id", roomModule.Handler.UpdateRoom)
+			admin.DELETE("/rooms/:id", roomModule.Handler.DeleteRoom)
 		}
 
 		// Auth Routes

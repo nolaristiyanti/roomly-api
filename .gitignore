@@ -22,3 +22,5 @@ Thumbs.db
 
 # Test
 test_expired_token.go
+/database/preload_test.go
+/scripts/
