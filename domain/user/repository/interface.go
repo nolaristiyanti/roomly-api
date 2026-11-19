@@ -21,7 +21,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (*entity.User, error)
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
 	Create(ctx context.Context, user entity.User) (*entity.User, error)
-	FindList(ctx context.Context, page int, limit int, search string) ([]entity.User, int64, error)
+	FindList(ctx context.Context, page int, limit int, search string, role string, sortBy string, sortOrder string) ([]entity.User, int64, error)
 	Update(ctx context.Context, user entity.User) (*entity.User, error)
 	Delete(ctx context.Context, id int64) error
 }

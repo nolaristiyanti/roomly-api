@@ -94,13 +94,19 @@ func (r *UserRepositoryStruct) Create(ctx context.Context, user entity.User) (*e
 	return userEntity, nil
 }
 
-func (r *UserRepositoryStruct) FindList(ctx context.Context, page int, limit int, search string) ([]entity.User, int64, error) {
+func (r *UserRepositoryStruct) FindList(ctx context.Context, page int, limit int, search string, role string, sortBy string, sortOrder string) ([]entity.User, int64, error) {
 	var userModels []model.User
 	var total int64
 
 	// Menghitung total seluruh user
 	countQuery := r.db.WithContext(ctx).Model(&model.User{})
 
+	// Filtering berdasarkan role
+	if role != "" {
+		countQuery = countQuery.Where("role = ?", role)
+	}
+
+	// Search berdasarkan nama dan email
 	if search != "" {
 		keyword := "%" + search + "%"
 		countQuery = countQuery.Where(
@@ -116,11 +122,21 @@ func (r *UserRepositoryStruct) FindList(ctx context.Context, page int, limit int
 
 	// SELECT COUNT(*)
 	// FROM users
-	// WHERE name ILIKE '%nola%'
-	//    OR email ILIKE '%nola%';
+	// WHERE role = 'admin'
+	// AND (
+	// 	name ILIKE '%nola%'
+	// 	OR email ILIKE '%nola%'
+	// );
 
-	// Mengambil data user
+	// Mengambil data User
 	dataQuery := r.db.WithContext(ctx).Model(&model.User{})
+
+	// Filtering
+	if role != "" {
+		dataQuery = dataQuery.Where("role = ?", role)
+	}
+
+	// Search
 	if search != "" {
 		keyword := "%" + search + "%"
 		dataQuery = dataQuery.Where(
@@ -130,21 +146,42 @@ func (r *UserRepositoryStruct) FindList(ctx context.Context, page int, limit int
 		)
 	}
 
+	// Sorting
+	allowedSortColumns := map[string]string{
+		"id":    "id",
+		"name":  "name",
+		"email": "email",
+		"role":  "role",
+	}
+
+	column, exists := allowedSortColumns[sortBy]
+	if !exists {
+		column = "id"
+	}
+
+	order := "ASC"
+	if sortOrder == "desc" {
+		order = "DESC"
+	}
+
 	// offset pagination
 	offset := (page - 1) * limit
 
 	err := dataQuery.
 		Select("id", "name", "email", "role").
-		Order("id ASC").
+		Order(column + " " + order).
 		Limit(limit).
 		Offset(offset).
 		Find(&userModels).Error
 
 	// SELECT id, name, email, role
 	// FROM users
-	// WHERE name ILIKE '%nola%'
-	//    OR email ILIKE '%nola%'
-	// ORDER BY id ASC
+	// WHERE role = 'admin'
+	// AND (
+	// 	name ILIKE '%nola%'
+	// 	OR email ILIKE '%nola%'
+	// )
+	// ORDER BY name DESC
 	// LIMIT 10
 	// OFFSET 0;
 
@@ -152,7 +189,7 @@ func (r *UserRepositoryStruct) FindList(ctx context.Context, page int, limit int
 		return nil, 0, err
 	}
 
-	// 4. Mapping Model ke Entity
+	// Mapping Model ke Entity
 	users := make([]entity.User, 0, len(userModels))
 
 	for _, userModel := range userModels {

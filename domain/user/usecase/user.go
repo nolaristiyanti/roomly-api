@@ -93,7 +93,7 @@ func (u *UserUsecase) CreateUser(ctx context.Context, user entity.User) (*entity
 	return createdUser, nil
 }
 
-func (u *UserUsecase) GetUserList(ctx context.Context, page int, limit int, search string) ([]entity.User, int64, error) {
+func (u *UserUsecase) GetUserList(ctx context.Context, page int, limit int, search string, role string, sortBy string, sortOrder string) ([]entity.User, int64, error) {
 	// 1. Validasi page
 	if page < 1 {
 		return nil, 0, apperrors.New(
@@ -114,8 +114,54 @@ func (u *UserUsecase) GetUserList(ctx context.Context, page int, limit int, sear
 		)
 	}
 
+	// Validasi role
+	if role != "" && role != "user" && role != "admin" {
+		return nil, 0, apperrors.New(
+			http.StatusBadRequest,
+			"INVALID_ROLE",
+			"Role must be user or admin",
+			nil,
+		)
+	}
+
+	// Default sorting
+	if sortBy == "" {
+		sortBy = "id"
+	}
+
+	if sortOrder == "" {
+		sortOrder = "asc"
+	}
+
+	// 5. Validasi sort_by
+	allowedSortFields := map[string]bool{
+		"id":    true,
+		"name":  true,
+		"email": true,
+		"role":  true,
+	}
+
+	if !allowedSortFields[sortBy] {
+		return nil, 0, apperrors.New(
+			http.StatusBadRequest,
+			"INVALID_SORT_FIELD",
+			"Invalid sort field",
+			nil,
+		)
+	}
+
+	// 6. Validasi sort_order
+	if sortOrder != "asc" && sortOrder != "desc" {
+		return nil, 0, apperrors.New(
+			http.StatusBadRequest,
+			"INVALID_SORT_ORDER",
+			"Sort order must be asc or desc",
+			nil,
+		)
+	}
+
 	// 3. Panggil Repository
-	users, total, err := u.userRepository.FindList(ctx, page, limit, search)
+	users, total, err := u.userRepository.FindList(ctx, page, limit, search, role, sortBy, sortOrder)
 
 	if err != nil {
 		return nil, 0, err

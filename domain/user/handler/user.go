@@ -185,9 +185,12 @@ func (h *UserHandlerStruct) GetUserList(ctx *gin.Context) {
 	}
 
 	search := ctx.Query("search")
+	role := ctx.Query("role")
+	sortBy := ctx.Query("sort_by")
+	sortOrder := ctx.Query("sort_order")
 
 	// 2. Panggil Usecase
-	users, total, err := h.userUsecase.GetUserList(ctx.Request.Context(), page, limit, search)
+	users, total, err := h.userUsecase.GetUserList(ctx.Request.Context(), page, limit, search, role, sortBy, sortOrder)
 
 	if err != nil {
 		handler.HandleError(ctx, err)
