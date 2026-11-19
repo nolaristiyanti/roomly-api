@@ -45,3 +45,64 @@ func (u *FacilityUsecase) GetFacilityByID(ctx context.Context, id int64) (*entit
 func (u *FacilityUsecase) GetFacilityList(ctx context.Context) ([]entity.Facility, error) {
 	return u.facilityRepository.FindList(ctx)
 }
+
+// CreateFacility membuat facility baru
+func (u *FacilityUsecase) CreateFacility(ctx context.Context, facility entity.Facility) (*entity.Facility, error) {
+	// Simpan Facility
+	result, err := u.facilityRepository.Create(ctx, facility)
+	if err != nil {
+		if errors.Is(err, repository.ErrFacilityAlreadyExists) {
+			return nil, apperrors.New(
+				http.StatusConflict,
+				"FACILITY_ALREADY_EXISTS",
+				"Facility already exists",
+				nil,
+			)
+		}
+
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (u *FacilityUsecase) UpdateFacility(ctx context.Context, facility entity.Facility) (*entity.Facility, error) {
+	// 1. Pastikan Facility tersedia
+	_, err := u.GetFacilityByID(ctx, facility.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Update Facility melalui Repository
+	result, err := u.facilityRepository.Update(ctx, facility)
+	if err != nil {
+		if errors.Is(err, repository.ErrFacilityAlreadyExists) {
+			return nil, apperrors.New(
+				http.StatusConflict,
+				"FACILITY_ALREADY_EXISTS",
+				"Facility already exists",
+				nil,
+			)
+		}
+
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (u *FacilityUsecase) DeleteFacility(ctx context.Context, id int64) error {
+	// 1. Pastikan Facility tersedia
+	_, err := u.GetFacilityByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. Hapus Facility melalui Repository
+	err = u.facilityRepository.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
