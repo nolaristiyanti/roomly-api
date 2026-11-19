@@ -2,9 +2,13 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"roomly-api/domain/user/entity"
 )
+
+var ErrEmailAlreadyExists = errors.New("email already exists")
+var ErrUserHasBookings = errors.New("user has bookings")
 
 // Interface ini adalah kontrak yang menyatakan operasi apa saja yang harus tersedia.
 // Artinya hanya mendefinisikan kemampuan yang harus disediakan oleh implementasi Repository.
@@ -18,4 +22,6 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
 	Create(ctx context.Context, user entity.User) (*entity.User, error)
 	FindList(ctx context.Context, page int, limit int, search string) ([]entity.User, int64, error)
+	Update(ctx context.Context, user entity.User) (*entity.User, error)
+	Delete(ctx context.Context, id int64) error
 }

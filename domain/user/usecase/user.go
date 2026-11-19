@@ -123,3 +123,131 @@ func (u *UserUsecase) GetUserList(ctx context.Context, page int, limit int, sear
 
 	return users, total, nil
 }
+
+func (u *UserUsecase) UpdateUser(ctx context.Context, user entity.User) (*entity.User, error) {
+	// 1. Pastikan User tersedia
+	_, err := u.GetUserByID(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Validasi role
+	if user.Role != "user" && user.Role != "admin" {
+		return nil, apperrors.New(
+			http.StatusBadRequest,
+			"INVALID_ROLE",
+			"Invalid user role",
+			nil,
+		)
+	}
+
+	// 3. Periksa apakah email sudah digunakan
+	existingUser, err := u.userRepository.FindByEmail(ctx, user.Email)
+
+	if err == nil && existingUser.ID != user.ID {
+		return nil, apperrors.New(
+			http.StatusConflict,
+			"EMAIL_ALREADY_EXISTS",
+			"Email is already registered",
+			nil,
+		)
+	}
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	// 4. Update User melalui Repository
+	updatedUser, err := u.userRepository.Update(ctx, user)
+
+	if err != nil {
+		if errors.Is(err, repository.ErrEmailAlreadyExists) {
+			return nil, apperrors.New(
+				http.StatusConflict,
+				"EMAIL_ALREADY_EXISTS",
+				"Email is already registered",
+				nil,
+			)
+		}
+
+		return nil, err
+	}
+
+	return updatedUser, nil
+}
+
+func (u *UserUsecase) DeleteUser(ctx context.Context, id int64) error {
+	// 1. Pastikan User tersedia
+	_, err := u.GetUserByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 2. Hapus User melalui Repository
+	err = u.userRepository.Delete(ctx, id)
+	if err != nil {
+		// 3. Periksa apakah User masih memiliki booking
+		if errors.Is(err, repository.ErrUserHasBookings) {
+			return apperrors.New(
+				http.StatusConflict,
+				"USER_HAS_BOOKINGS",
+				"User cannot be deleted because they have existing bookings",
+				nil,
+			)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (u *UserUsecase) UpdateMyProfile(ctx context.Context, userID int64, name string, email string) (*entity.User, error) {
+	// 1. Ambil data User yang sedang login
+	existingUser, err := u.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Periksa apakah email sudah digunakan User lain
+	emailUser, err := u.userRepository.FindByEmail(ctx, email)
+
+	if err == nil && emailUser.ID != userID {
+		return nil, apperrors.New(
+			http.StatusConflict,
+			"EMAIL_ALREADY_EXISTS",
+			"Email is already registered",
+			nil,
+		)
+	}
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	// 3. Buat Entity dengan mempertahankan Role lama
+	user := entity.User{
+		ID:    userID,
+		Name:  name,
+		Email: email,
+		Role:  existingUser.Role,
+	}
+
+	// 4. Update melalui Repository
+	updatedUser, err := u.userRepository.Update(ctx, user)
+
+	if err != nil {
+		if errors.Is(err, repository.ErrEmailAlreadyExists) {
+			return nil, apperrors.New(
+				http.StatusConflict,
+				"EMAIL_ALREADY_EXISTS",
+				"Email is already registered",
+				nil,
+			)
+		}
+
+		return nil, err
+	}
+
+	return updatedUser, nil
+}

@@ -232,3 +232,149 @@ func (h *UserHandlerStruct) GetUserList(ctx *gin.Context) {
 		data,
 	)
 }
+
+func (h *UserHandlerStruct) UpdateUser(ctx *gin.Context) {
+	// 1. Ambil ID dari URL
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		handler.ErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			"Invalid user ID",
+			"INVALID_USER_ID",
+			nil,
+		)
+		return
+	}
+
+	// 2. Binding dan validasi request
+	var req dto.UpdateUserRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		handler.ErrorResponse(
+			ctx,
+			http.StatusUnprocessableEntity,
+			"Validation failed",
+			"VALIDATION_ERROR",
+			helper.TranslateValidationError(err),
+		)
+		return
+	}
+
+	// 3. Mapping DTO ke Entity
+	user := entity.User{
+		ID:    id,
+		Name:  req.Name,
+		Email: req.Email,
+		Role:  req.Role,
+	}
+
+	// 4. Panggil Usecase
+	updatedUser, err := h.userUsecase.UpdateUser(
+		ctx.Request.Context(),
+		user,
+	)
+
+	if err != nil {
+		handler.HandleError(ctx, err)
+		return
+	}
+
+	// 5. Mapping Entity ke Response DTO
+	response := dto.UserResponse{
+		ID:    updatedUser.ID,
+		Name:  updatedUser.Name,
+		Email: updatedUser.Email,
+		Role:  updatedUser.Role,
+	}
+
+	// 6. Kirim response
+	handler.SuccessResponse(
+		ctx,
+		http.StatusOK,
+		"User updated successfully",
+		response,
+	)
+}
+
+func (h *UserHandlerStruct) DeleteUser(ctx *gin.Context) {
+	// 1. Ambil ID dari URL
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		handler.ErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			"Invalid user ID",
+			"INVALID_USER_ID",
+			nil,
+		)
+		return
+	}
+
+	// 2. Panggil Usecase
+	err = h.userUsecase.DeleteUser(
+		ctx.Request.Context(),
+		id,
+	)
+
+	if err != nil {
+		handler.HandleError(ctx, err)
+		return
+	}
+
+	// 3. Kirim response sukses
+	handler.SuccessResponse(
+		ctx,
+		http.StatusOK,
+		"User deleted successfully",
+		nil,
+	)
+}
+
+func (h *UserHandlerStruct) UpdateMyProfile(ctx *gin.Context) {
+	// 1. Ambil User ID dari Authentication Middleware
+	userID := ctx.GetInt64("user_id")
+
+	// 2. Binding dan validasi request
+	var req dto.UpdateProfileRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		handler.ErrorResponse(
+			ctx,
+			http.StatusUnprocessableEntity,
+			"Validation failed",
+			"VALIDATION_ERROR",
+			helper.TranslateValidationError(err),
+		)
+		return
+	}
+
+	// 3. Panggil Usecase
+	updatedUser, err := h.userUsecase.UpdateMyProfile(
+		ctx.Request.Context(),
+		userID,
+		req.Name,
+		req.Email,
+	)
+
+	if err != nil {
+		handler.HandleError(ctx, err)
+		return
+	}
+
+	// 4. Mapping Entity ke Response DTO
+	response := dto.UserResponse{
+		ID:    updatedUser.ID,
+		Name:  updatedUser.Name,
+		Email: updatedUser.Email,
+		Role:  updatedUser.Role,
+	}
+
+	// 5. Kirim response
+	handler.SuccessResponse(
+		ctx,
+		http.StatusOK,
+		"Profile updated successfully",
+		response,
+	)
+}

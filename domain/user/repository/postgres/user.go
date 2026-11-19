@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"roomly-api/domain/user/entity"
@@ -165,4 +167,65 @@ func (r *UserRepositoryStruct) FindList(ctx context.Context, page int, limit int
 	}
 
 	return users, total, nil
+}
+
+func (r *UserRepositoryStruct) Update(ctx context.Context, user entity.User) (*entity.User, error) {
+	var userModel model.User
+
+	// 1. Cari User berdasarkan ID
+	err := r.db.WithContext(ctx).First(&userModel, user.ID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Update field yang diperbolehkan
+	userModel.Name = user.Name
+	userModel.Email = user.Email
+	userModel.Role = user.Role
+
+	// 3. Simpan perubahan
+	err = r.db.WithContext(ctx).
+		Model(&userModel).
+		Select("Name", "Email", "Role").
+		Updates(&userModel).Error
+
+	if err != nil {
+		// 4. Deteksi duplicate email
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique violation
+			return nil, repository.ErrEmailAlreadyExists
+		}
+
+		return nil, err
+	}
+
+	// 5. Mapping Model ke Entity
+	userEntity := &entity.User{
+		ID:       userModel.ID,
+		Name:     userModel.Name,
+		Email:    userModel.Email,
+		Password: userModel.Password,
+		Role:     userModel.Role,
+	}
+
+	return userEntity, nil
+}
+
+func (r *UserRepositoryStruct) Delete(ctx context.Context, id int64) error {
+	err := r.db.WithContext(ctx).
+		Delete(&model.User{}, id).
+		Error
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" { // foreign key violation
+			return repository.ErrUserHasBookings
+		}
+
+		return err
+	}
+
+	return nil
 }

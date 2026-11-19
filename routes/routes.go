@@ -53,6 +53,8 @@ func RegisterRoutes(router *gin.Engine, userModule *user.Module, roomModule *roo
 		{
 			admin.POST("/users", userModule.Handler.CreateUser)
 			admin.GET("/users", userModule.Handler.GetUserList)
+			admin.PUT("/users/:id", userModule.Handler.UpdateUser)
+			admin.DELETE("/users/:id", userModule.Handler.DeleteUser)
 
 			admin.POST("/rooms", roomModule.Handler.CreateRoom)
 			admin.PUT("/rooms/:id", roomModule.Handler.UpdateRoom)
@@ -70,6 +72,7 @@ func RegisterRoutes(router *gin.Engine, userModule *user.Module, roomModule *roo
 		// Hubungkan ke method User Handler.
 		protected.GET("/users/:id", userModule.Handler.GetUserByID)
 		protected.GET("/users/profile", userModule.Handler.GetMyProfile)
+		protected.PUT("/users/profile", userModule.Handler.UpdateMyProfile)
 
 		// Booking routes
 		// Hubungkan ke method Booking Handler.
