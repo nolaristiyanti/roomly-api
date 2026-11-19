@@ -1,7 +1,6 @@
 package model
 
 import (
-	bookingmodel "roomly-api/domain/booking/model"
 	"time"
 )
 
@@ -14,5 +13,5 @@ type User struct {
 	CreatedAt time.Time `gorm:"not null;default:now()"`
 	UpdatedAt time.Time `gorm:"not null;default:now()"`
 
-	Bookings []bookingmodel.Booking `gorm:"foreignKey:UserID"` // Satu user punya banyak booking
+	// Bookings []bookingmodel.Booking `gorm:"foreignKey:UserID"` // Satu user punya banyak booking
 }

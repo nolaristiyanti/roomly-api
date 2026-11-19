@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -9,7 +11,9 @@ import (
 	bookingentity "roomly-api/domain/booking/entity"
 	bookingmodel "roomly-api/domain/booking/model"
 	"roomly-api/domain/booking/repository"
+	roomentity "roomly-api/domain/room/entity"
 	roommodel "roomly-api/domain/room/model"
+	userentity "roomly-api/domain/user/entity"
 )
 
 type BookingRepositoryStruct struct {
@@ -35,19 +39,29 @@ func (r *BookingRepositoryStruct) FindByID(ctx context.Context, id int64, userID
 	}
 
 	// err := r.db.WithContext(ctx).First(&bookingModel, id).Error
-	err := query.First(&bookingModel).Error
+	// err := query.First(&bookingModel).Error
+	err := query.
+		Preload("User").
+		Preload("Room").
+		First(&bookingModel).Error
 
 	// --- User
 	// SELECT *
-	// FROM bookings
-	// WHERE id = 10
-	// AND user_id = 4
+	// FROM bookings b
+	// INNER JOIN users u
+	// 	ON u.id = b.user_id
+	// INNER JOIN rooms r
+	// 	ON r.id = b.room_id
+	// WHERE b.user_id = 4
 	// LIMIT 1;
 
 	// --- Admin
 	// SELECT *
-	// FROM bookings
-	// WHERE id = 10
+	// FROM bookings b
+	// INNER JOIN users u
+	// 	ON u.id = b.user_id
+	// INNER JOIN rooms r
+	// 	ON r.id = b.room_id
 	// LIMIT 1;
 
 	if err != nil {
@@ -69,21 +83,35 @@ func (r *BookingRepositoryStruct) FindList(ctx context.Context, userID *int64) (
 	}
 
 	// err := r.db.WithContext(ctx).Order("start_time ASC").Find(&bookingModels).Error
-	err := query.Order("start_time ASC").Find(&bookingModels).Error
+	// err := query.Order("start_time ASC").Find(&bookingModels).Error
+	err := query.
+		Preload("User").
+		Preload("Room").
+		Order("start_time ASC").
+		Find(&bookingModels).Error
+
 	if err != nil {
 		return nil, err
 	}
 
 	// --- User
 	// SELECT *
-	// FROM bookings
-	// WHERE user_id = 4
-	// ORDER BY start_time ASC;
+	// FROM bookings b
+	// INNER JOIN users u
+	// 	ON u.id = b.user_id
+	// INNER JOIN rooms r
+	// 	ON r.id = b.room_id
+	// WHERE b.user_id = 4
+	// ORDER BY b.start_time ASC;
 
 	// --- Admin
 	// SELECT *
-	// FROM bookings
-	// ORDER BY start_time ASC;
+	// FROM bookings b
+	// INNER JOIN users u
+	// 	ON u.id = b.user_id
+	// INNER JOIN rooms r
+	// 	ON r.id = b.room_id
+	// ORDER BY b.start_time ASC;
 
 	bookingEntities := make([]bookingentity.Booking, 0, len(bookingModels))
 
@@ -171,7 +199,31 @@ func (r *BookingRepositoryStruct) Create(ctx context.Context, booking bookingent
 		}
 
 		// INSERT INTO bookings (...);
-		return tx.Create(&createdBooking).Error
+		if err := tx.Create(&createdBooking).Error; err != nil {
+			return err
+		}
+
+		// 5. Ambil kembali booking beserta relasinya
+		if err := tx.
+			Preload("User", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id", "name", "email")
+			}).
+			Preload("Room", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id", "name", "capacity", "location")
+			}).
+			First(&createdBooking, createdBooking.ID).Error; err != nil {
+			return err
+		}
+
+		// SELECT *
+		// FROM bookings b
+		// INNER JOIN users u
+		// 	ON u.id = b.user_id
+		// INNER JOIN rooms r
+		// 	ON r.id = b.room_id
+		// WHERE b.id = 10;
+
+		return nil
 	}) // GORM melakukan COMMIT atau ROLLBACK
 
 	if err != nil {
@@ -190,5 +242,79 @@ func toEntity(item bookingmodel.Booking) *bookingentity.Booking {
 		StartTime: item.StartTime,
 		EndTime:   item.EndTime,
 		Status:    item.Status,
+
+		User: userentity.User{
+			ID:    item.User.ID,
+			Name:  item.User.Name,
+			Email: item.User.Email,
+		},
+
+		Room: roomentity.Room{
+			ID:       item.Room.ID,
+			Name:     item.Room.Name,
+			Capacity: item.Room.Capacity,
+			Location: item.Room.Location,
+		},
 	}
+}
+
+// Cancel membatalkan booking
+func (r *BookingRepositoryStruct) Cancel(ctx context.Context, id int64, userID *int64) error {
+	// BEGIN;
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var booking bookingmodel.Booking
+
+		// 1. Cari booking dan lock row
+		query := tx.Clauses(clause.Locking{
+			Strength: "UPDATE", // Mengunci row booking yang ditemukan selama transaksi berlangsung
+		}).Where("id = ?", id)
+
+		// Jika user, batasi berdasarkan pemilik booking
+		if userID != nil {
+			query = query.Where("user_id = ?", *userID)
+		}
+
+		err := query.First(&booking).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return repository.ErrBookingNotFound
+			}
+			return err
+		}
+
+		// User :
+		// SELECT *
+		// FROM bookings
+		// WHERE id = 10
+		// AND user_id = 4
+		// FOR UPDATE;
+
+		// Admin :
+		// SELECT *
+		// FROM bookings
+		// WHERE id = 10
+		// FOR UPDATE;
+
+		// 2. Periksa status booking
+		if booking.Status == "cancelled" {
+			return repository.ErrBookingAlreadyCancelled
+		}
+
+		// 3. Booking hanya bisa dibatalkan sebelum waktu mulai
+		if !booking.StartTime.After(time.Now()) {
+			return repository.ErrBookingAlreadyStarted
+		}
+
+		// 4. Update status booking
+		return tx.Model(&booking).Updates(map[string]interface{}{
+			"status":     "cancelled",
+			"updated_at": time.Now(),
+		}).Error
+
+		// UPDATE bookings
+		// SET
+		// 	status = 'cancelled',
+		// 	updated_at = NOW()
+		// WHERE id = 10;
+	}) // COMMIT; atau ROLLBACK;
 }

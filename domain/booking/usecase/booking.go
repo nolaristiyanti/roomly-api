@@ -233,3 +233,83 @@ func validateBookingTime(startTime, endTime time.Time) error {
 
 	return nil
 }
+
+// CancelBooking membatalkan booking
+func (u *BookingUsecase) CancelBooking(ctx context.Context, id int64, userID int64, role string) error {
+	// 1. Validasi booking ID
+	if id <= 0 {
+		return apperrors.New(
+			http.StatusBadRequest,
+			"INVALID_BOOKING_ID",
+			"Invalid booking ID",
+			nil,
+		)
+	}
+
+	// 2. Tentukan filter user
+	var filterUserID *int64
+
+	if role != "admin" {
+		if userID <= 0 {
+			return apperrors.New(
+				http.StatusUnauthorized,
+				"UNAUTHORIZED",
+				"Invalid user identity",
+				nil,
+			)
+		}
+
+		filterUserID = &userID
+	}
+
+	// 3. Panggil Repository
+	err := u.bookingRepository.Cancel(ctx, id, filterUserID)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrBookingNotFound):
+			return apperrors.New(
+				http.StatusNotFound,
+				"BOOKING_NOT_FOUND",
+				"Booking not found",
+				nil,
+			)
+
+		case errors.Is(err, repository.ErrBookingAlreadyCancelled):
+			return apperrors.New(
+				http.StatusConflict,
+				"BOOKING_ALREADY_CANCELLED",
+				"Booking has already been cancelled",
+				nil,
+			)
+
+		case errors.Is(err, repository.ErrBookingAlreadyStarted):
+			return apperrors.New(
+				http.StatusConflict,
+				"BOOKING_ALREADY_STARTED",
+				"Booking cannot be cancelled because it has already started",
+				nil,
+			)
+		}
+
+		slog.ErrorContext(
+			ctx,
+			"Failed to cancel booking",
+			"booking_id", id,
+			"user_id", userID,
+			"error", err,
+		)
+
+		return err
+	}
+
+	// 4. Log successful cancellation
+	slog.InfoContext(
+		ctx,
+		"Booking cancelled successfully",
+		"booking_id", id,
+		"user_id", userID,
+	)
+
+	return nil
+}

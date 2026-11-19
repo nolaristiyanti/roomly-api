@@ -79,6 +79,7 @@ func RegisterRoutes(router *gin.Engine, userModule *user.Module, roomModule *roo
 		protected.POST("/bookings", bookingModule.Handler.CreateBooking)
 		protected.GET("/bookings/:id", bookingModule.Handler.GetBookingByID)
 		protected.GET("/bookings", bookingModule.Handler.GetBookingList)
+		protected.DELETE("/bookings/:id", bookingModule.Handler.CancelBooking)
 
 		// Room routes
 		// Hubungkan ke method Room Handler.

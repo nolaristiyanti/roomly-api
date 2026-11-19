@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	roommodel "roomly-api/domain/room/model"
+	usermodel "roomly-api/domain/user/model"
+	"time"
+)
 
 type Booking struct {
 	ID        int64     `gorm:"type:bigint;primaryKey;autoIncrement"`
@@ -11,4 +15,7 @@ type Booking struct {
 	Status    string    `gorm:"type:varchar(20);not null;default:confirmed"`
 	CreatedAt time.Time `gorm:"not null;default:now()"`
 	UpdatedAt time.Time `gorm:"not null;default:now()"`
+
+	User usermodel.User `gorm:"foreignKey:UserID"`
+	Room roommodel.Room `gorm:"foreignKey:RoomID"`
 }

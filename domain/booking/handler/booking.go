@@ -57,14 +57,15 @@ func (h *BookingHandlerStruct) CreateBooking(ctx *gin.Context) {
 	}
 
 	// 4. Mapping Entity ke DTO
-	response := dto.BookingResponse{
-		ID:        result.ID,
-		UserID:    result.UserID,
-		RoomID:    result.RoomID,
-		StartTime: result.StartTime,
-		EndTime:   result.EndTime,
-		Status:    result.Status,
-	}
+	// response := dto.BookingResponse{
+	// 	ID:        result.ID,
+	// 	UserID:    result.UserID,
+	// 	RoomID:    result.RoomID,
+	// 	StartTime: result.StartTime,
+	// 	EndTime:   result.EndTime,
+	// 	Status:    result.Status,
+	// }
+	response := toBookingResponse(result)
 
 	// 5. Kirim response
 	commonhandler.SuccessResponse(
@@ -98,14 +99,15 @@ func (h *BookingHandlerStruct) GetBookingByID(ctx *gin.Context) {
 		return
 	}
 
-	response := dto.BookingResponse{
-		ID:        booking.ID,
-		UserID:    booking.UserID,
-		RoomID:    booking.RoomID,
-		StartTime: booking.StartTime,
-		EndTime:   booking.EndTime,
-		Status:    booking.Status,
-	}
+	// response := dto.BookingResponse{
+	// 	ID:        booking.ID,
+	// 	UserID:    booking.UserID,
+	// 	RoomID:    booking.RoomID,
+	// 	StartTime: booking.StartTime,
+	// 	EndTime:   booking.EndTime,
+	// 	Status:    booking.Status,
+	// }
+	response := toBookingResponse(booking)
 
 	commonhandler.SuccessResponse(
 		ctx,
@@ -129,14 +131,15 @@ func (h *BookingHandlerStruct) GetBookingList(ctx *gin.Context) {
 	responses := make([]dto.BookingResponse, 0, len(bookings))
 
 	for _, booking := range bookings {
-		responses = append(responses, dto.BookingResponse{
-			ID:        booking.ID,
-			UserID:    booking.UserID,
-			RoomID:    booking.RoomID,
-			StartTime: booking.StartTime,
-			EndTime:   booking.EndTime,
-			Status:    booking.Status,
-		})
+		// responses = append(responses, dto.BookingResponse{
+		// 	ID:        booking.ID,
+		// 	UserID:    booking.UserID,
+		// 	RoomID:    booking.RoomID,
+		// 	StartTime: booking.StartTime,
+		// 	EndTime:   booking.EndTime,
+		// 	Status:    booking.Status,
+		// })
+		responses = append(responses, toBookingResponse(&booking))
 	}
 
 	commonhandler.SuccessResponse(
@@ -145,4 +148,69 @@ func (h *BookingHandlerStruct) GetBookingList(ctx *gin.Context) {
 		"Bookings retrieved successfully",
 		responses,
 	)
+}
+
+// CancelBooking membatalkan booking
+func (h *BookingHandlerStruct) CancelBooking(ctx *gin.Context) {
+	// 1. Ambil dan validasi booking ID
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		commonhandler.ErrorResponse(
+			ctx,
+			http.StatusBadRequest,
+			"Invalid booking ID",
+			"INVALID_BOOKING_ID",
+			nil,
+		)
+		return
+	}
+
+	// 2. Ambil identitas user dari JWT context
+	userID := ctx.GetInt64("user_id")
+	role := ctx.GetString("role")
+
+	// 3. Panggil Usecase
+	err = h.bookingUsecase.CancelBooking(
+		ctx.Request.Context(),
+		id,
+		userID,
+		role,
+	)
+
+	if err != nil {
+		commonhandler.HandleError(ctx, err)
+		return
+	}
+
+	// 4. Kirim response
+	commonhandler.SuccessResponse(
+		ctx,
+		http.StatusOK,
+		"Booking cancelled successfully",
+		nil,
+	)
+}
+
+func toBookingResponse(item *entity.Booking) dto.BookingResponse {
+	return dto.BookingResponse{
+		ID: item.ID,
+		// UserID:    item.UserID,
+		// RoomID:    item.RoomID,
+		StartTime: item.StartTime,
+		EndTime:   item.EndTime,
+		Status:    item.Status,
+
+		User: dto.BookingUserResponse{
+			ID:    item.User.ID,
+			Name:  item.User.Name,
+			Email: item.User.Email,
+		},
+
+		Room: dto.BookingRoomResponse{
+			ID:       item.Room.ID,
+			Name:     item.Room.Name,
+			Capacity: item.Room.Capacity,
+			Location: item.Room.Location,
+		},
+	}
 }
