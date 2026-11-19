@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -26,6 +27,14 @@ func NewBookingUsecase(bookingRepository repository.BookingRepository) *BookingU
 func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booking) (*entity.Booking, error) {
 	// 1. Validasi aturan waktu
 	if err := validateBookingTime(booking.StartTime, booking.EndTime); err != nil {
+		slog.WarnContext(
+			ctx,
+			"Booking time validation failed",
+			"user_id", booking.UserID,
+			"room_id", booking.RoomID,
+			"error", err,
+		)
+
 		return nil, err
 	}
 
@@ -34,6 +43,13 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrRoomNotFound):
+			slog.WarnContext(
+				ctx,
+				"Booking failed: room not found",
+				"user_id", booking.UserID,
+				"room_id", booking.RoomID,
+			)
+
 			return nil, apperrors.New(
 				http.StatusNotFound,
 				"ROOM_NOT_FOUND",
@@ -42,6 +58,13 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 			)
 
 		case errors.Is(err, repository.ErrRoomInactive):
+			slog.WarnContext(
+				ctx,
+				"Booking failed: room is inactive",
+				"user_id", booking.UserID,
+				"room_id", booking.RoomID,
+			)
+
 			return nil, apperrors.New(
 				http.StatusUnprocessableEntity,
 				"ROOM_INACTIVE",
@@ -50,6 +73,13 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 			)
 
 		case errors.Is(err, repository.ErrBookingConflict):
+			slog.WarnContext(
+				ctx,
+				"Booking failed: schedule conflict",
+				"user_id", booking.UserID,
+				"room_id", booking.RoomID,
+			)
+
 			return nil, apperrors.New(
 				http.StatusConflict,
 				"BOOKING_CONFLICT",
@@ -58,8 +88,26 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 			)
 		}
 
+		// Unexpected error
+		slog.ErrorContext(
+			ctx,
+			"Failed to create booking",
+			"user_id", booking.UserID,
+			"room_id", booking.RoomID,
+			"error", err,
+		)
+
 		return nil, err
 	}
+
+	// Log booking berhasil dibuat
+	slog.InfoContext(
+		ctx,
+		"Booking created successfully",
+		"booking_id", result.ID,
+		"user_id", result.UserID,
+		"room_id", result.RoomID,
+	)
 
 	return result, nil
 }

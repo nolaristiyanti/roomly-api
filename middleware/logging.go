@@ -18,17 +18,40 @@ func Logging() gin.HandlerFunc {
 		// Menghitung durasi pemrosesan request
 		duration := time.Since(start)
 
-		// Mengambil Request ID dari Gin context
+		// Mengambil informasi request dari Gin context
 		requestID := ctx.GetString("RequestID")
+		method := ctx.Request.Method
+		path := ctx.Request.URL.Path
+		status := ctx.Writer.Status()
+		clientIP := ctx.ClientIP() // Mengambil alamat IP client
 
-		// Mencatat informasi HTTP request
-		slog.Info(
-			"HTTP request",
+		// Log attributes
+		attrs := []any{
 			"request_id", requestID,
-			"method", ctx.Request.Method,
-			"path", ctx.Request.URL.Path,
-			"status", ctx.Writer.Status(),
+			"method", method,
+			"path", path,
+			"status", status,
 			"duration_ms", duration.Milliseconds(),
-		)
+			"client_ip", clientIP,
+		}
+
+		// Mengambil user_id dari Auth Middleware jika request sudah terautentikasi
+		userID := ctx.GetInt64("user_id")
+
+		if userID > 0 {
+			attrs = append(attrs, "user_id", userID)
+		}
+
+		// Mencatat informasi HTTP request dan menentukan log level berdasarkan HTTP status
+		switch {
+		case status >= 500:
+			slog.Error("HTTP request", attrs...)
+
+		case status >= 400:
+			slog.Warn("HTTP request", attrs...)
+
+		default:
+			slog.Info("HTTP request", attrs...)
+		}
 	}
 }
