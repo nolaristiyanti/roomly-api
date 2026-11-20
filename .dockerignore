@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+tmp/
+
+# Go build
+/bin/
+/dist/
+*.exe
+*.out
+
+# Test files and scripts
+test_expired_token.go
+/database/preload_test.go
+/scripts/
+
+# Backup
+*.dump

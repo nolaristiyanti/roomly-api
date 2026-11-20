@@ -30,7 +30,9 @@ type Config struct {
 
 func LoadConfig() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("failed to load .env: %w", err)
+		if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("failed to load .env: %w", err)
+		}
 	}
 
 	jwtExpireHours, err := strconv.Atoi(os.Getenv("JWT_EXPIRE_HOURS"))
