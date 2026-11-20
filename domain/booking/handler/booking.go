@@ -23,6 +23,21 @@ func NewBookingHandler(bookingUsecase *usecase.BookingUsecase) *BookingHandlerSt
 }
 
 // CreateBooking membuat booking baru
+// CreateBooking godoc
+// @Summary Create a new booking
+// @Description Create a room booking for the authenticated user.
+// @Tags Booking
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.CreateBookingRequest true "Booking data"
+// @Success 201 {object} map[string]interface{} "Booking created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid booking request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Room not found"
+// @Failure 409 {object} map[string]interface{} "Booking schedule conflict"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /bookings [post]
 func (h *BookingHandlerStruct) CreateBooking(ctx *gin.Context) {
 	var request dto.CreateBookingRequest
 
@@ -77,6 +92,20 @@ func (h *BookingHandlerStruct) CreateBooking(ctx *gin.Context) {
 }
 
 // GetBookingByID mengambil detail booking berdasarkan ID
+// GetBookingByID godoc
+// @Summary Get booking detail
+// @Description Retrieve booking details by ID. Access depends on the authenticated user's role and ownership.
+// @Tags Booking
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Booking ID"
+// @Success 200 {object} map[string]interface{} "Booking retrieved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid booking ID"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 404 {object} map[string]interface{} "Booking not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /bookings/{id} [get]
 func (h *BookingHandlerStruct) GetBookingByID(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
@@ -118,6 +147,16 @@ func (h *BookingHandlerStruct) GetBookingByID(ctx *gin.Context) {
 }
 
 // GetBookingList mengambil seluruh daftar booking
+// GetBookingList godoc
+// @Summary Get booking list
+// @Description Retrieve bookings belonging to the authenticated user. Admins can retrieve all bookings.
+// @Tags Booking
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Bookings retrieved successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /bookings [get]
 func (h *BookingHandlerStruct) GetBookingList(ctx *gin.Context) {
 	userID := ctx.GetInt64("user_id")
 	role := ctx.GetString("role")
@@ -151,6 +190,21 @@ func (h *BookingHandlerStruct) GetBookingList(ctx *gin.Context) {
 }
 
 // CancelBooking membatalkan booking
+// CancelBooking godoc
+// @Summary Cancel booking
+// @Description Cancel an existing booking. Users can cancel their own bookings, while admins can cancel any booking.
+// @Tags Booking
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Booking ID"
+// @Success 200 {object} map[string]interface{} "Booking cancelled successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid booking ID"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 404 {object} map[string]interface{} "Booking not found"
+// @Failure 409 {object} map[string]interface{} "Booking cannot be cancelled"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /bookings/{id} [delete]
 func (h *BookingHandlerStruct) CancelBooking(ctx *gin.Context) {
 	// 1. Ambil dan validasi booking ID
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)

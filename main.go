@@ -1,3 +1,17 @@
+// @title           Roomly API
+// @version         1.0
+// @description     Room & Facility Booking Management API
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name    Roomly API Support
+
+// @host            localhost:8080
+// @BasePath        /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter your JWT token with the Bearer prefix. Example: Bearer eyJhbGciOiJIUzI1NiIs...
 package main
 
 import (
@@ -16,6 +30,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	_ "roomly-api/docs"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -67,6 +86,12 @@ func main() {
 	router.Use(middleware.RequestID()) // membuat identitas request
 	router.Use(middleware.Logging())   // mencatat informasi request setelah proses selesai
 	router.Use(gin.Recovery())         // menangani panic agar server tidak berhenti akibat panic pada satu request
+
+	// Swagger UI
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(
+		swaggerFiles.Handler,
+		ginSwagger.DefaultModelsExpandDepth(-1),
+	))
 
 	// Meneruskan Modules ke Routes dan register routes dan pasang auth middleware ke routes
 	routes.RegisterRoutes(router, userModule, roomModule, facilityModule, bookingModule, authModule, sessionRepository, jwtService, redisClient)

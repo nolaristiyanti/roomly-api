@@ -24,6 +24,19 @@ func NewFacilityHandler(facilityUsecase *usecase.FacilityUsecase) *FacilityHandl
 }
 
 // GetFacilityByID mengambil detail facility berdasarkan ID
+// GetFacilityByID godoc
+// @Summary Get facility detail
+// @Description Retrieve facility details by ID.
+// @Tags Facility
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Facility ID"
+// @Success 200 {object} map[string]interface{} "Facility retrieved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid facility ID"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Facility not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /facilities/{id} [get]
 func (h *FacilityHandlerStruct) GetFacilityByID(ctx *gin.Context) {
 	// 1. Ambil ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -62,6 +75,16 @@ func (h *FacilityHandlerStruct) GetFacilityByID(ctx *gin.Context) {
 }
 
 // GetFacilityList mengambil seluruh daftar facility
+// GetFacilityList godoc
+// @Summary Get facility list
+// @Description Retrieve all available facilities.
+// @Tags Facility
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Facilities retrieved successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /facilities [get]
 func (h *FacilityHandlerStruct) GetFacilityList(ctx *gin.Context) {
 	// 1. Panggil Usecase
 	facilities, err := h.facilityUsecase.GetFacilityList(ctx.Request.Context())
@@ -93,6 +116,20 @@ func (h *FacilityHandlerStruct) GetFacilityList(ctx *gin.Context) {
 }
 
 // CreateFacility membuat facility baru
+// CreateFacility godoc
+// @Summary Create a new facility
+// @Description Create a new facility. Admin access required.
+// @Tags Admin - Facilities
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.CreateFacilityRequest true "Facility data"
+// @Success 201 {object} map[string]interface{} "Facility created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /admin/facilities [post]
 func (h *FacilityHandlerStruct) CreateFacility(ctx *gin.Context) {
 	// 1. Binding dan validasi request
 	var request dto.CreateFacilityRequest
@@ -140,6 +177,22 @@ func (h *FacilityHandlerStruct) CreateFacility(ctx *gin.Context) {
 	)
 }
 
+// UpdateFacility godoc
+// @Summary Update facility
+// @Description Update facility information. Admin access required.
+// @Tags Admin - Facilities
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Facility ID"
+// @Param request body dto.UpdateFacilityRequest true "Updated facility data"
+// @Success 200 {object} map[string]interface{} "Facility updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid facility ID or request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 404 {object} map[string]interface{} "Facility not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /admin/facilities/{id} [put]
 func (h *FacilityHandlerStruct) UpdateFacility(ctx *gin.Context) {
 	// 1. Ambil ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -197,6 +250,20 @@ func (h *FacilityHandlerStruct) UpdateFacility(ctx *gin.Context) {
 	)
 }
 
+// DeleteFacility godoc
+// @Summary Delete facility
+// @Description Delete a facility by ID. Admin access required.
+// @Tags Admin - Facilities
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Facility ID"
+// @Success 200 {object} map[string]interface{} "Facility deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid facility ID"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 404 {object} map[string]interface{} "Facility not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /admin/facilities/{id} [delete]
 func (h *FacilityHandlerStruct) DeleteFacility(ctx *gin.Context) {
 	// 1. Ambil ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)

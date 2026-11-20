@@ -25,6 +25,19 @@ func NewRoomHandler(roomUsecase *usecase.RoomUsecase) *RoomHandlerStruct {
 }
 
 // GetRoomByID mengambil detail room berdasarkan ID
+// GetRoomByID godoc
+// @Summary Get room detail
+// @Description Retrieve room details by ID, including its facilities.
+// @Tags Room
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Room ID"
+// @Success 200 {object} map[string]interface{} "Room retrieved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid room ID"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Room not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /rooms/{id} [get]
 func (h *RoomHandlerStruct) GetRoomByID(ctx *gin.Context) {
 	// 1. Ambil ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -67,6 +80,16 @@ func (h *RoomHandlerStruct) GetRoomByID(ctx *gin.Context) {
 }
 
 // GetRoomList mengambil seluruh daftar room
+// GetRoomList godoc
+// @Summary Get room list
+// @Description Retrieve all available rooms with their facilities.
+// @Tags Room
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Rooms retrieved successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /rooms [get]
 func (h *RoomHandlerStruct) GetRoomList(ctx *gin.Context) {
 	// 1. Panggil Usecase
 	rooms, err := h.roomUsecase.GetRoomList(ctx.Request.Context())
@@ -117,6 +140,20 @@ func mapFacilitiesToResponse(facilities []facilityentity.Facility) []facilitydto
 }
 
 // CreateRoom membuat room baru
+// CreateRoom godoc
+// @Summary Create a new room
+// @Description Create a room and optionally assign facilities to it. Admin access required.
+// @Tags Admin - Rooms
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.CreateRoomRequest true "Room data"
+// @Success 201 {object} map[string]interface{} "Room created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /admin/rooms [post]
 func (h *RoomHandlerStruct) CreateRoom(ctx *gin.Context) {
 	// 1. Binding dan validasi request
 	var request dto.CreateRoomRequest
@@ -178,6 +215,22 @@ func (h *RoomHandlerStruct) CreateRoom(ctx *gin.Context) {
 }
 
 // UpdateRoom memperbarui data room
+// UpdateRoom godoc
+// @Summary Update room
+// @Description Update room information and its assigned facilities. Admin access required.
+// @Tags Admin - Rooms
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Room ID"
+// @Param request body dto.UpdateRoomRequest true "Updated room data"
+// @Success 200 {object} map[string]interface{} "Room updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid room ID or request"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 404 {object} map[string]interface{} "Room not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /admin/rooms/{id} [put]
 func (h *RoomHandlerStruct) UpdateRoom(ctx *gin.Context) {
 	// 1. Ambil Room ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -254,6 +307,20 @@ func (h *RoomHandlerStruct) UpdateRoom(ctx *gin.Context) {
 }
 
 // DeleteRoom menghapus room berdasarkan ID
+// DeleteRoom godoc
+// @Summary Delete room
+// @Description Delete a room by ID. Admin access required.
+// @Tags Admin - Rooms
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Room ID"
+// @Success 200 {object} map[string]interface{} "Room deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid room ID"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 403 {object} map[string]interface{} "Forbidden"
+// @Failure 404 {object} map[string]interface{} "Room not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /admin/rooms/{id} [delete]
 func (h *RoomHandlerStruct) DeleteRoom(ctx *gin.Context) {
 	// 1. Ambil Room ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)

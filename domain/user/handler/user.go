@@ -25,6 +25,20 @@ func NewUserHandler(userUsecase *usecase.UserUsecase) *UserHandlerStruct {
 	}
 }
 
+// GetUserByID godoc
+// @Summary      Get user by ID
+// @Description  Retrieve a user by ID. Users can only access their own profile, while admins can access any user.
+// @Tags         User
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "User ID"
+// @Success      200 {object} map[string]interface{} "User retrieved successfully"
+// @Failure      400 {object} map[string]interface{} "Invalid user ID"
+// @Failure      401 {object} map[string]interface{} "Unauthorized"
+// @Failure      403 {object} map[string]interface{} "Forbidden"
+// @Failure      404 {object} map[string]interface{} "User not found"
+// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Router       /users/{id} [get]
 func (h *UserHandlerStruct) GetUserByID(ctx *gin.Context) {
 	// 1. Ambil ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -79,6 +93,20 @@ func (h *UserHandlerStruct) GetUserByID(ctx *gin.Context) {
 	)
 }
 
+// CreateUser godoc
+// @Summary      Create user
+// @Description  Create a new user account. Admin access required.
+// @Tags         Admin - Users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body dto.CreateUserRequest true "User data"
+// @Success      201 {object} map[string]interface{} "User created successfully"
+// @Failure      401 {object} map[string]interface{} "Unauthorized"
+// @Failure      403 {object} map[string]interface{} "Forbidden"
+// @Failure      422 {object} map[string]interface{} "Validation failed"
+// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Router       /admin/users [post]
 func (h *UserHandlerStruct) CreateUser(ctx *gin.Context) {
 	var req dto.CreateUserRequest
 
@@ -127,6 +155,17 @@ func (h *UserHandlerStruct) CreateUser(ctx *gin.Context) {
 	)
 }
 
+// GetMyProfile godoc
+// @Summary      Get my profile
+// @Description  Retrieve the authenticated user's profile.
+// @Tags         User
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{} "Profile retrieved successfully"
+// @Failure      401 {object} map[string]interface{} "Unauthorized"
+// @Failure      404 {object} map[string]interface{} "User not found"
+// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Router       /users/profile [get]
 func (h *UserHandlerStruct) GetMyProfile(ctx *gin.Context) {
 	// 1. Ambil user ID dari Authentication Middleware
 	userID := ctx.GetInt64("user_id")
@@ -158,6 +197,24 @@ func (h *UserHandlerStruct) GetMyProfile(ctx *gin.Context) {
 	)
 }
 
+// GetUserList godoc
+// @Summary      Get user list
+// @Description  Retrieve users with pagination, search, filtering, and sorting. Admin access required.
+// @Tags         Admin - Users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page query int false "Page number" default(1)
+// @Param        limit query int false "Items per page" default(10)
+// @Param        search query string false "Search by user name or email"
+// @Param        role query string false "Filter by role"
+// @Param        sort_by query string false "Sort field"
+// @Param        sort_order query string false "Sort direction (asc or desc)"
+// @Success      200 {object} map[string]interface{} "Users retrieved successfully"
+// @Failure      400 {object} map[string]interface{} "Invalid pagination parameter"
+// @Failure      401 {object} map[string]interface{} "Unauthorized"
+// @Failure      403 {object} map[string]interface{} "Forbidden"
+// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Router       /admin/users [get]
 func (h *UserHandlerStruct) GetUserList(ctx *gin.Context) {
 	// 1. Ambil pagination parameter
 	page, err := strconv.Atoi(ctx.DefaultQuery("page", "1"))
@@ -236,6 +293,22 @@ func (h *UserHandlerStruct) GetUserList(ctx *gin.Context) {
 	)
 }
 
+// UpdateUser godoc
+// @Summary      Update user
+// @Description  Update an existing user. Admin access required.
+// @Tags         Admin - Users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "User ID"
+// @Param        request body dto.UpdateUserRequest true "User data"
+// @Success      200 {object} map[string]interface{} "User updated successfully"
+// @Failure      400 {object} map[string]interface{} "Invalid user ID"
+// @Failure      401 {object} map[string]interface{} "Unauthorized"
+// @Failure      403 {object} map[string]interface{} "Forbidden"
+// @Failure      422 {object} map[string]interface{} "Validation failed"
+// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Router       /admin/users/{id} [put]
 func (h *UserHandlerStruct) UpdateUser(ctx *gin.Context) {
 	// 1. Ambil ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -300,6 +373,20 @@ func (h *UserHandlerStruct) UpdateUser(ctx *gin.Context) {
 	)
 }
 
+// DeleteUser godoc
+// @Summary      Delete user
+// @Description  Delete an existing user. Admin access required.
+// @Tags         Admin - Users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "User ID"
+// @Success      200 {object} map[string]interface{} "User deleted successfully"
+// @Failure      400 {object} map[string]interface{} "Invalid user ID"
+// @Failure      401 {object} map[string]interface{} "Unauthorized"
+// @Failure      403 {object} map[string]interface{} "Forbidden"
+// @Failure      404 {object} map[string]interface{} "User not found"
+// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Router       /admin/users/{id} [delete]
 func (h *UserHandlerStruct) DeleteUser(ctx *gin.Context) {
 	// 1. Ambil ID dari URL
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -334,6 +421,19 @@ func (h *UserHandlerStruct) DeleteUser(ctx *gin.Context) {
 	)
 }
 
+// UpdateMyProfile godoc
+// @Summary      Update my profile
+// @Description  Update the authenticated user's name and email.
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body dto.UpdateProfileRequest true "Profile data"
+// @Success      200 {object} map[string]interface{} "Profile updated successfully"
+// @Failure      401 {object} map[string]interface{} "Unauthorized"
+// @Failure      422 {object} map[string]interface{} "Validation failed"
+// @Failure      500 {object} map[string]interface{} "Internal server error"
+// @Router       /users/profile [put]
 func (h *UserHandlerStruct) UpdateMyProfile(ctx *gin.Context) {
 	// 1. Ambil User ID dari Authentication Middleware
 	userID := ctx.GetInt64("user_id")

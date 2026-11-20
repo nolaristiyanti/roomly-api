@@ -22,6 +22,18 @@ func NewAuthHandler(authUsecase *usecase.AuthUsecaseStruct) *AuthHandlerStruct {
 }
 
 // Register menangani HTTP request pendaftaran user.
+// Register godoc
+// @Summary      	Register new user
+// @Description  	Register a new user account.
+// @Tags         	Authentication
+// @Accept       	json
+// @Produce      	json
+// @Param 			request body dto.RegisterRequest true "Registration data"
+// @Success 		201 {object} map[string]interface{} "Registration successful"
+// @Failure 		422 {object} map[string]interface{} "Validation failed"
+// @Failure 		409 {object} map[string]interface{} "Email already registered"
+// @Failure 		500 {object} map[string]interface{} "Internal server error"
+// @Router       	/auth/register [post]
 func (h *AuthHandlerStruct) Register(ctx *gin.Context) {
 	var req dto.RegisterRequest
 
@@ -67,6 +79,18 @@ func (h *AuthHandlerStruct) Register(ctx *gin.Context) {
 	)
 }
 
+// Login godoc
+// @Summary      	Login user
+// @Description  	Authenticate user and generate JWT access token.
+// @Tags         	Authentication
+// @Accept       	json
+// @Produce      	json
+// @Param 			request body dto.LoginRequest true "Login credentials"
+// @Success 		200 {object} map[string]interface{} "Login successful"
+// @Failure 		401 {object} map[string]interface{} "Invalid credentials"
+// @Failure 		422 {object} map[string]interface{} "Validation failed"
+// @Failure 		500 {object} map[string]interface{} "Internal server error"
+// @Router       	/auth/login [post]
 func (h *AuthHandlerStruct) Login(ctx *gin.Context) {
 	var req dto.LoginRequest
 
@@ -110,6 +134,16 @@ func (h *AuthHandlerStruct) Login(ctx *gin.Context) {
 	)
 }
 
+// Logout godoc
+// @Summary      Logout user
+// @Description  Invalidate the current JWT session.
+// @Tags         Authentication
+// @Produce      json
+// @Security     BearerAuth
+// @Success 	200 {object} map[string]interface{} "Logout successful"
+// @Failure 	401 {object} map[string]interface{} "Invalid or expired session"
+// @Failure 	500 {object} map[string]interface{} "Internal server error"
+// @Router       /auth/logout [post]
 func (h *AuthHandlerStruct) Logout(ctx *gin.Context) {
 	// Mengambil JTI
 	jti := ctx.GetString("jti")
