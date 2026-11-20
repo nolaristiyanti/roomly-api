@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	requestcontext "roomly-api/common/context"
 	apperrors "roomly-api/common/errors"
 	"roomly-api/domain/booking/entity"
 	"roomly-api/domain/booking/repository"
@@ -27,14 +28,6 @@ func NewBookingUsecase(bookingRepository repository.BookingRepository) *BookingU
 func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booking) (*entity.Booking, error) {
 	// 1. Validasi aturan waktu
 	if err := validateBookingTime(booking.StartTime, booking.EndTime); err != nil {
-		slog.WarnContext(
-			ctx,
-			"Booking time validation failed",
-			"user_id", booking.UserID,
-			"room_id", booking.RoomID,
-			"error", err,
-		)
-
 		return nil, err
 	}
 
@@ -43,13 +36,6 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrRoomNotFound):
-			slog.WarnContext(
-				ctx,
-				"Booking failed: room not found",
-				"user_id", booking.UserID,
-				"room_id", booking.RoomID,
-			)
-
 			return nil, apperrors.New(
 				http.StatusNotFound,
 				"ROOM_NOT_FOUND",
@@ -58,13 +44,6 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 			)
 
 		case errors.Is(err, repository.ErrRoomInactive):
-			slog.WarnContext(
-				ctx,
-				"Booking failed: room is inactive",
-				"user_id", booking.UserID,
-				"room_id", booking.RoomID,
-			)
-
 			return nil, apperrors.New(
 				http.StatusUnprocessableEntity,
 				"ROOM_INACTIVE",
@@ -73,13 +52,6 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 			)
 
 		case errors.Is(err, repository.ErrBookingConflict):
-			slog.WarnContext(
-				ctx,
-				"Booking failed: schedule conflict",
-				"user_id", booking.UserID,
-				"room_id", booking.RoomID,
-			)
-
 			return nil, apperrors.New(
 				http.StatusConflict,
 				"BOOKING_CONFLICT",
@@ -92,6 +64,7 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 		slog.ErrorContext(
 			ctx,
 			"Failed to create booking",
+			"request_id", requestcontext.RequestID(ctx),
 			"user_id", booking.UserID,
 			"room_id", booking.RoomID,
 			"error", err,
@@ -104,6 +77,7 @@ func (u *BookingUsecase) CreateBooking(ctx context.Context, booking entity.Booki
 	slog.InfoContext(
 		ctx,
 		"Booking created successfully",
+		"request_id", requestcontext.RequestID(ctx),
 		"booking_id", result.ID,
 		"user_id", result.UserID,
 		"room_id", result.RoomID,
@@ -295,6 +269,7 @@ func (u *BookingUsecase) CancelBooking(ctx context.Context, id int64, userID int
 		slog.ErrorContext(
 			ctx,
 			"Failed to cancel booking",
+			"request_id", requestcontext.RequestID(ctx),
 			"booking_id", id,
 			"user_id", userID,
 			"error", err,
@@ -307,6 +282,7 @@ func (u *BookingUsecase) CancelBooking(ctx context.Context, id int64, userID int
 	slog.InfoContext(
 		ctx,
 		"Booking cancelled successfully",
+		"request_id", requestcontext.RequestID(ctx),
 		"booking_id", id,
 		"user_id", userID,
 	)
